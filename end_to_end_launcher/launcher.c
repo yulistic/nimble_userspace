@@ -72,7 +72,7 @@ enum {
 	OPT_PERF_INTERV,
 };
 
-int syscall_mm_manage = 334;
+int syscall_mm_manage = 440;
 
 unsigned cycles_high, cycles_low;
 unsigned cycles_high1, cycles_low1;
