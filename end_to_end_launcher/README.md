@@ -1,4 +1,4 @@
 ```
 ./prepare.sh # Once after reboot.
-source set_env.sh # Once for each terminal session.
+source env.sh # Once for each terminal session.
 ```

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+#set -ex
 export FAST_NODE=1
 export SLOW_NODE=0
 export STATS_PERIOD=5
@@ -11,10 +11,10 @@ export MIGRATION_BATCH_SIZE=8
 export MIGRATION_MT=4 # how many cpu threads you want to use for page migration.
 export PREFER_FAST_NODE=yes
 
-export BENCH_SIZE="30GB"
+export BENCH_SIZE="8GB"
 
 #MEM_SIZE="16GB"
-MEM_SIZE="3GB"
+MEM_SIZE="4GB"
 #MEM_SIZE="unlimited"
 
 RES_FOLDER="results-mm-manage-fast-${MEM_SIZE}-${MIGRATION_MT}-threads"
@@ -61,7 +61,7 @@ PAGE_REPLACEMENT_SCHEMES="non-thp-migration"
 
 #MEM_SIZE_LIST="unlimited" # specify a list of fast memory sizes (GB).
 #MEM_SIZE_LIST=$(seq 4 4 28)
-MEM_SIZE_LIST=4
+MEM_SIZE_LIST=$(seq 4 4)
 
 #export NO_MIGRATE=""
 
