@@ -7,7 +7,7 @@ else
 	export CPUS=1
 fi
 
-PROJECT_LOC="/home/yanzi/projects/thp_migration/two-level-memory"
+PROJECT_LOC="$PROJ_ROOT"
 
 if [[ "x${BENCH}" == "xdata-caching" || "x${BENCH}" == "xmemcached-user"  ]]; then
 LAUNCHER="${PROJECT_LOC}/launcher --dumpstats_signal --dumpstats_period ${STATS_PERIOD}"

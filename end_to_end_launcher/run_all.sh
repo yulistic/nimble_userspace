@@ -1,14 +1,14 @@
 #!/bin/bash
-
+set -ex
 export FAST_NODE=1
 export SLOW_NODE=0
 export STATS_PERIOD=5
 export MOVE_HOT_AND_COLD_PAGES=no
-export SHRINK_PAGE_LISTS=yes
+export SHRINK_PAGE_LISTS=yes # page migration policy will be used.
 export FORCE_NO_MIGRATION=no
-export NR_RUNS=2
+export NR_RUNS=1 # how many times the experiments repeat.
 export MIGRATION_BATCH_SIZE=8
-export MIGRATION_MT=4
+export MIGRATION_MT=4 # how many cpu threads you want to use for page migration.
 export PREFER_FAST_NODE=yes
 
 export BENCH_SIZE="30GB"
@@ -41,6 +41,13 @@ BENCHMARK_LIST="graph500-omp"
 #BENCHMARK_LIST="data-caching"
 #BENCHMARK_FOLDERS="data-caching"
 
+## Different migration options.
+## - all-remote-access: All Slow
+## - all-local-access: All Fast.
+## - non-thp-migration
+## - tph-migration
+## - exchange-pages
+##
 #PAGE_REPLACEMENT_SCHEMES="all-remote-access non-thp-migration thp-migration opt-migration exchange-pages"
 #PAGE_REPLACEMENT_SCHEMES="all-remote-access all-local-access non-thp-migration thp-migration opt-migration"
 #PAGE_REPLACEMENT_SCHEMES="non-thp-migration thp-migration opt-migration"
@@ -50,18 +57,22 @@ BENCHMARK_LIST="graph500-omp"
 #PAGE_REPLACEMENT_SCHEMES="concur-only-opt-migration concur-only-exchange-pages"
 #PAGE_REPLACEMENT_SCHEMES="exchange-pages"
 #PAGE_REPLACEMENT_SCHEMES="opt-migration"
+PAGE_REPLACEMENT_SCHEMES="non-thp-migration"
 
-#MEM_SIZE_LIST="unlimited"
-MEM_SIZE_LIST=$(seq 4 4 28)
+#MEM_SIZE_LIST="unlimited" # specify a list of fast memory sizes (GB).
+#MEM_SIZE_LIST=$(seq 4 4 28)
+MEM_SIZE_LIST=4
 
 #export NO_MIGRATE=""
 
-#THREAD_LIST="20"
-THREAD_LIST="16"
-MEMHOG_THREAD_LIST=$(seq 6 6)
+#THREAD_LIST="20" # how many hardware threads applications wants.
+THREAD_LIST="4"
+#MEMHOG_THREAD_LIST=$(seq 6 6)
+MEMHOG_THREAD_LIST=0
 
 read -a BENCH_ARRAY <<< "${BENCHMARK_LIST}"
 
+echo "BENCH_ARRAY: $BENCH_ARRAY"
 
 #THRESHOLD=`cat /proc/zoneinfo | grep -A 5 "Node 1" | grep high | awk '{print $2}' `
 #THRESHOLD=$((-THRESHOLD/64))
@@ -73,15 +84,19 @@ trap "./create_die_stacked_mem.sh remove;  exit" INT
 
 sudo sysctl vm/migration_batch_size=${MIGRATION_BATCH_SIZE}
 sudo sysctl vm/limit_mt_num=${MIGRATION_MT}
-if test ${SCAN_DIVISOR} -gt 0 ;  then
-sudo sysctl vm/scan_divisor=${SCAN_DIVISOR}
-fi
+
+## Cannot find SCAN_DIVISOR.
+#if test ${SCAN_DIVISOR} -gt 0 ;  then
+#sudo sysctl vm/scan_divisor=${SCAN_DIVISOR}
+#fi
 
 
 for i in $(seq 1 ${NR_RUNS});
 do
+	echo "ROUND: $i"
 	for MEM_SIZE in ${MEM_SIZE_LIST};
 	do
+		echo "Memsize: $MEM_SIZE"
 
 		if [[ "x${MEM_SIZE}" != "xunlimited" ]]; then
 			MEM_SIZE="${MEM_SIZE}GB"
@@ -95,8 +110,11 @@ do
 
 		for B_IDX in $(seq 0 $((${#BENCH_ARRAY[@]}-1)));
 		do
-			#echo ${BENCH_ARRAY[${B_IDX}]}" at "${BENCH_FOLDER_ARRAY[${B_IDX}]}
+			echo "B_IDX: $B_IDX"
+			echo ${BENCH_ARRAY[${B_IDX}]}" at "${BENCH_FOLDER_ARRAY[${B_IDX}]}
 			export BENCH=${BENCH_ARRAY[${B_IDX}]}
+
+			echo "BENCH: $BENCH"
 
 			if [ ! -d "${RES_FOLDER}/${BENCH}" ]; then
 				mkdir -p ${RES_FOLDER}/${BENCH}
@@ -111,12 +129,15 @@ do
 					./create_die_stacked_mem.sh
 					export MOVE_HOT_AND_COLD_PAGES=yes
 				fi
+				echo "Memory size set."
+
 				#sudo sysctl vm.enable_prefetcher=0
 				export SCHEME=${SCHEME}
 				echo "Configuration: ${SCHEME}"
 
 				for THREAD in ${THREAD_LIST};
 				do
+					echo "Thread: $THREAD"
 
 					for MEMHOG_THREADS in ${MEMHOG_THREAD_LIST};
 					do
